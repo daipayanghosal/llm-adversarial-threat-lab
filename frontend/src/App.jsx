@@ -1,39 +1,27 @@
 import React, { useEffect, useState } from 'react'
-import {
-  Activity,
-  BarChart3,
-  FileCheck2,
-  Plug,
-  Radio,
-  Shield,
-  TerminalSquare,
-} from 'lucide-react'
+import { BarChart3, BookOpen, Plug, Shield, TerminalSquare } from 'lucide-react'
 import SandboxView from './components/SandboxView'
 import TelemetryView from './components/TelemetryView'
 import GrcMatrixView from './components/GrcMatrixView'
 import { evaluateOffline, replayData } from './utils/offlineEngine'
 
 const TABS = [
-  { id: 'sandbox', label: 'Red / Blue Sandbox', icon: TerminalSquare },
-  { id: 'telemetry', label: 'ASR & Latency Telemetry', icon: BarChart3 },
-  { id: 'grc', label: 'GRC & Compliance Matrix', icon: FileCheck2 },
+  { id: 'sandbox', label: '1. Try an Attack', icon: TerminalSquare },
+  { id: 'telemetry', label: '2. Defense Scoreboard', icon: BarChart3 },
+  { id: 'grc', label: '3. Security Rules & Laws', icon: BookOpen },
 ]
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('sandbox')
   const [connectionMode, setConnectionMode] = useState('offline') // 'offline' | 'live'
   const [tunnelUrl, setTunnelUrl] = useState('http://127.0.0.1:8000')
-  const [healthState, setHealthState] = useState({
-    status: 'offline',
-    label: 'OFFLINE REPLAY READY',
-    model: 'deepseek-r1:7b (recorded traces)',
-  })
+  const [statusPill, setStatusPill] = useState({ kind: 'offline', label: 'Demo Mode Ready' })
 
   const [payloads, setPayloads] = useState(replayData.payloads)
   const [scenarios, setScenarios] = useState(replayData.scenarios)
   const [benchmarks, setBenchmarks] = useState(replayData.benchmarks)
 
-  const initialPayload = replayData.payloads[6] || replayData.payloads[0] // Default to CoT Hijack for immediate insight
+  const initialPayload = replayData.payloads[6] || replayData.payloads[0]
   const [selectedPayloadId, setSelectedPayloadId] = useState(initialPayload.id)
   const [prompt, setPrompt] = useState(initialPayload.prompt)
   const [agenticMode, setAgenticMode] = useState(Boolean(initialPayload.agentic))
@@ -57,18 +45,16 @@ export default function App() {
 
   const checkLiveConnection = async (baseUrl = normalizedBaseUrl) => {
     setEvalError('')
-    setHealthState({ status: 'checking', label: 'PROBING TUNNEL...', model: 'connecting...' })
+    setStatusPill({ kind: 'checking', label: 'Connecting...' })
     try {
       const resp = await fetch(`${baseUrl}/health`, { method: 'GET' })
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
       const data = await resp.json()
-      setHealthState({
-        status: 'connected',
-        label: data.ollama_reachable ? 'LIVE COLAB OLLAMA CONNECTED' : 'LIVE API CONNECTED (SIM)',
-        model: data.active_model || 'deepseek-r1:7b',
+      setStatusPill({
+        kind: 'connected',
+        label: data.ollama_reachable ? 'Live Colab GPU Connected' : 'Local Backend Connected',
       })
 
-      // Sync payloads & benchmarks from live backend
       const [pResp, bResp] = await Promise.all([
         fetch(`${baseUrl}/api/payloads`),
         fetch(`${baseUrl}/api/benchmarks`),
@@ -82,22 +68,14 @@ export default function App() {
         setBenchmarks(await bResp.json())
       }
     } catch (err) {
-      setHealthState({
-        status: 'error',
-        label: 'TUNNEL UNREACHABLE',
-        model: 'check CORS / cloudflared URL',
-      })
-      setEvalError(`Failed to connect to ${baseUrl}: ${err.message}`)
+      setStatusPill({ kind: 'error', label: 'Not Connected' })
+      setEvalError(`Could not reach ${baseUrl}. Make sure the backend or Colab tunnel is running.`)
     }
   }
 
   useEffect(() => {
     if (connectionMode === 'offline') {
-      setHealthState({
-        status: 'offline',
-        label: 'OFFLINE REPLAY READY',
-        model: 'deepseek-r1:7b (recorded traces)',
-      })
+      setStatusPill({ kind: 'offline', label: 'Demo Mode Ready' })
       setPayloads(replayData.payloads)
       setScenarios(replayData.scenarios)
       setBenchmarks(replayData.benchmarks)
@@ -161,13 +139,11 @@ export default function App() {
         }),
       })
       if (!resp.ok) {
-        const errBody = await resp.text()
-        throw new Error(`API ${resp.status}: ${errBody}`)
+        throw new Error(`HTTP ${resp.status}`)
       }
-      const data = await resp.json()
-      setEvalResult(data)
+      setEvalResult(await resp.json())
     } catch (err) {
-      setEvalError(`Live evaluation failed: ${err.message}`)
+      setEvalError(`Could not run evaluation: ${err.message}`)
     } finally {
       setIsRunning(false)
     }
@@ -193,52 +169,47 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#1a2332] text-[#a4b1cd] flex flex-col">
-      {/* Top Cyber Workbench Header */}
+      {/* Simple Clean Header */}
       <header className="sticky top-0 z-30 bg-[#111824]/95 backdrop-blur border-b border-[#2d3b52]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[#2ee7b6]/10 border border-[#2ee7b6]/40">
+            <div className="p-2 rounded-xl bg-[#2ee7b6]/10 border border-[#2ee7b6]/40">
               <Shield className="w-6 h-6 text-[#2ee7b6]" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-base sm:text-lg font-mono font-bold text-[#e2e8f0] tracking-tight">
-                  llm-adversarial-threat-lab
-                </h1>
-                <span className="hidden sm:inline-block px-2 py-0.5 text-[11px] font-mono rounded bg-[#1a2332] border border-[#2d3b52] text-[#38bdf8]">
-                  DeepSeek-R1 Red/Blue Workbench
-                </span>
-              </div>
+              <h1 className="text-base sm:text-lg font-bold text-[#e2e8f0]">
+                AI Security &amp; Privacy Lab
+              </h1>
               <p className="text-xs text-[#a4b1cd]">
-                OWASP LLM01 / LLM06 / LLM08 Adversarial Testing, Dual Guardrails &amp; GRC Telemetry
+                See how attackers trick an AI — and how safety guards stop them
               </p>
             </div>
           </div>
 
-          {/* Connection Toggle & Tunnel Input */}
+          {/* Simple Mode Switcher */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-lg bg-[#1a2332] border border-[#2d3b52] p-0.5">
               <button
                 type="button"
                 onClick={() => setConnectionMode('offline')}
-                className={`px-3 py-1.5 rounded-md text-xs font-mono transition ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                   connectionMode === 'offline'
                     ? 'bg-[#2ee7b6] text-[#0f172a] font-semibold'
                     : 'text-[#a4b1cd] hover:text-[#e2e8f0]'
                 }`}
               >
-                Offline Replay Mode
+                Demo Mode
               </button>
               <button
                 type="button"
                 onClick={() => setConnectionMode('live')}
-                className={`px-3 py-1.5 rounded-md text-xs font-mono transition ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                   connectionMode === 'live'
                     ? 'bg-[#38bdf8] text-[#0f172a] font-semibold'
                     : 'text-[#a4b1cd] hover:text-[#e2e8f0]'
                 }`}
               >
-                Live Colab API
+                Live API / Colab
               </button>
             </div>
 
@@ -248,13 +219,13 @@ export default function App() {
                   type="url"
                   value={tunnelUrl}
                   onChange={(e) => setTunnelUrl(e.target.value)}
-                  placeholder="https://xxx.trycloudflare.com"
-                  className="w-56 sm:w-64 bg-[#1a2332] border border-[#2d3b52] rounded-lg px-2.5 py-1.5 font-mono text-xs text-[#e2e8f0] focus:outline-none focus:border-[#38bdf8]"
+                  placeholder="Paste Colab URL or localhost"
+                  className="w-52 bg-[#1a2332] border border-[#2d3b52] rounded-lg px-2.5 py-1.5 text-xs text-[#e2e8f0] focus:outline-none focus:border-[#38bdf8]"
                 />
                 <button
                   type="button"
                   onClick={() => checkLiveConnection()}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a2332] border border-[#2d3b52] hover:border-[#38bdf8] text-xs font-mono text-[#e2e8f0]"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1a2332] border border-[#2d3b52] hover:border-[#38bdf8] text-xs text-[#e2e8f0]"
                 >
                   <Plug className="w-3.5 h-3.5 text-[#38bdf8]" />
                   Connect
@@ -262,28 +233,22 @@ export default function App() {
               </div>
             )}
 
-            <div
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-mono ${
-                healthState.status === 'error'
+            <span
+              className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium ${
+                statusPill.kind === 'error'
                   ? 'bg-[#f43f5e]/15 text-[#f43f5e] border-[#f43f5e]/40'
-                  : healthState.status === 'connected'
+                  : statusPill.kind === 'connected'
                     ? 'bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/40'
                     : 'bg-[#2ee7b6]/15 text-[#2ee7b6] border-[#2ee7b6]/40'
               }`}
-              title={healthState.model}
             >
-              {healthState.status === 'connected' ? (
-                <Radio className="w-3.5 h-3.5 animate-pulse" />
-              ) : (
-                <Activity className="w-3.5 h-3.5" />
-              )}
-              <span>{healthState.label}</span>
-            </div>
+              {statusPill.label}
+            </span>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto border-t border-[#2d3b52]/60">
+        {/* Clean 3-Tab Navigation */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-2 overflow-x-auto border-t border-[#2d3b52]/60">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const active = activeTab === tab.id
@@ -307,7 +272,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">
         {activeTab === 'sandbox' && (
           <SandboxView
             payloads={payloads}
@@ -315,9 +280,7 @@ export default function App() {
             selectedPayloadId={selectedPayloadId}
             onSelectPayload={handleSelectPayload}
             prompt={prompt}
-            onPromptChange={(val) => {
-              setPrompt(val)
-            }}
+            onPromptChange={setPrompt}
             agenticMode={agenticMode}
             onAgenticModeChange={setAgenticMode}
             scenarioId={scenarioId}
