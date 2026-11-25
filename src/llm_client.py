@@ -125,7 +125,7 @@ class OllamaClient:
         base_url: str = DEFAULT_OLLAMA_URL,
         model: str = PRIMARY_MODEL,
         fallback_model: str = FALLBACK_MODEL,
-        timeout_seconds: float = 90.0,
+        timeout_seconds: float = 180.0,
         simulator: Optional[Callable[[str, str], str]] = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
@@ -174,7 +174,7 @@ class OllamaClient:
         prompt: str,
         system_prompt: str = "",
         temperature: float = 0.2,
-        max_tokens: int = 512,
+        max_tokens: int = 1536,
         simulate: bool = False,
     ) -> LLMResponse:
         """Execute chat completion via Ollama or an explicit deterministic simulator."""
@@ -197,9 +197,10 @@ class OllamaClient:
                 is_simulated=True,
             )
 
+        installed = self.list_models()
         chosen_model = self.resolve_active_model()
         candidates = [chosen_model]
-        if self.fallback_model not in candidates:
+        if self.fallback_model not in candidates and (not installed or self.fallback_model in installed):
             candidates.append(self.fallback_model)
 
         messages: list[dict[str, str]] = []
@@ -207,7 +208,7 @@ class OllamaClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        last_err: Optional[Exception] = None
+        errors: list[str] = []
         for model_name in candidates:
             payload: dict[str, Any] = {
                 "model": model_name,
@@ -228,23 +229,44 @@ class OllamaClient:
                 elapsed_ms = (time.perf_counter() - t0) * 1000.0
                 resp.raise_for_status()
                 body = resp.json()
-                raw = body.get("message", {}).get("content", "")
-                parsed = parse_deepseek_response(raw)
+                message = body.get("message", {})
+                raw_content = (message.get("content") or "").strip()
+                native_thinking = (message.get("thinking") or "").strip()
+
+                if native_thinking:
+                    parsed_content = parse_deepseek_response(raw_content)
+                    combined_thinking = "\n\n".join(
+                        part for part in (native_thinking, parsed_content.thinking) if part
+                    )
+                    final_response = parsed_content.final_response
+                    raw_output = f"<think>\n{combined_thinking}\n</think>\n{final_response}".strip()
+                    think_truncated = (
+                        parsed_content.think_truncated
+                        or (body.get("done_reason") == "length" and not final_response)
+                    )
+                    thinking = combined_thinking
+                else:
+                    parsed = parse_deepseek_response(raw_content)
+                    thinking = parsed.thinking
+                    final_response = parsed.final_response
+                    raw_output = raw_content
+                    think_truncated = parsed.think_truncated
+
                 return LLMResponse(
                     model=model_name,
-                    raw_output=raw,
-                    thinking=parsed.thinking,
-                    final_response=parsed.final_response,
+                    raw_output=raw_output,
+                    thinking=thinking,
+                    final_response=final_response,
                     latency_ms=round(elapsed_ms, 2),
                     prompt_tokens=int(body.get("prompt_eval_count", 0)),
                     completion_tokens=int(body.get("eval_count", 0)),
-                    think_truncated=parsed.think_truncated,
+                    think_truncated=think_truncated,
                     is_simulated=False,
                 )
             except requests.RequestException as exc:
-                last_err = exc
+                errors.append(f"{model_name}: {exc}")
                 continue
 
         raise ConnectionError(
-            f"Unable to reach local Ollama at {self.base_url} for models {candidates}: {last_err}"
+            f"Unable to reach local Ollama at {self.base_url}: {'; '.join(errors)}"
         )

@@ -34,6 +34,45 @@ def test_deepseek_think_parser_variants() -> None:
     assert trunc.think_truncated is True
 
 
+def test_ollama_native_thinking_field_extraction(monkeypatch) -> None:
+    class _FakeResp:
+        def __init__(self, data: dict) -> None:
+            self._data = data
+            self.status_code = 200
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return self._data
+
+    def _fake_get(url: str, timeout: float = 3.0) -> _FakeResp:
+        return _FakeResp({"models": [{"name": "deepseek-r1:7b"}]})
+
+    def _fake_post(url: str, json: dict, timeout: float = 180.0) -> _FakeResp:
+        return _FakeResp(
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "TLS 1.3 prevents downgrade attacks via server random canaries.",
+                    "thinking": "Verify TLS 1.3 anti-downgrade sentinel behavior.",
+                },
+                "prompt_eval_count": 24,
+                "eval_count": 48,
+                "done_reason": "stop",
+            }
+        )
+
+    monkeypatch.setattr("src.llm_client.requests.get", _fake_get)
+    monkeypatch.setattr("src.llm_client.requests.post", _fake_post)
+
+    client = OllamaClient()
+    res = client.generate("Explain TLS 1.3 briefly.")
+    assert res.thinking == "Verify TLS 1.3 anti-downgrade sentinel behavior."
+    assert res.final_response == "TLS 1.3 prevents downgrade attacks via server random canaries."
+    assert "<think>" in res.raw_output
+
+
 def test_pii_tokenizer_masks_and_restores_all_patterns() -> None:
     tokenizer = PIITokenizer()
     sample = (
