@@ -8,9 +8,8 @@ export default function GrcMatrixView({ onInspectPayload }) {
 
   const filteredRows = useMemo(() => {
     return GRC_MAPPINGS.filter((item) => {
-      if (frameworkFilter === 'OWASP_INJ' && !item.owaspId.includes('LLM01')) return false
-      if (frameworkFilter === 'OWASP_PII' && !item.owaspId.includes('LLM06')) return false
-      if (frameworkFilter === 'OWASP_AGT' && !item.owaspId.includes('LLM08')) return false
+      if (frameworkFilter === 'OWASP_1_5' && !['LLM01', 'LLM02', 'LLM03', 'LLM04', 'LLM05'].includes(item.owaspId)) return false
+      if (frameworkFilter === 'OWASP_6_10' && !['LLM06', 'LLM07', 'LLM08', 'LLM09', 'LLM10'].includes(item.owaspId)) return false
       if (frameworkFilter === 'HIGH_RISK' && !item.euRiskTier.includes('High-Risk')) return false
       if (query.trim()) {
         const q = query.toLowerCase()
@@ -24,15 +23,14 @@ export default function GrcMatrixView({ onInspectPayload }) {
 
   return (
     <div className="space-y-5">
-      {/* Intro & Simple Filter */}
       <section className="bg-[#111824] border border-[#2d3b52] rounded-xl p-5 space-y-4">
         <div>
           <h2 className="text-base font-semibold text-[#e2e8f0] flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-[#2ee7b6]" />
-            Why These Protections Matter (Real-World AI Standards)
+            Textbook OWASP Top 10 for LLMs (2025) &amp; AI Laws
           </h2>
           <p className="text-xs text-[#a4b1cd] mt-1">
-            Each attack and defense in this lab maps directly to industry checklists: <strong>OWASP Top 10</strong> (common AI hacks), <strong>NIST AI RMF</strong> (US safety guidelines), and the <strong>EU AI Act</strong> (European AI law).
+            All 10 official <strong>OWASP LLM Top 10</strong> risks mapped to the <strong>NIST AI RMF</strong> guidelines and the <strong>EU AI Act</strong>.
           </p>
         </div>
 
@@ -43,7 +41,7 @@ export default function GrcMatrixView({ onInspectPayload }) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search topic (e.g. Aadhaar, thinking, email, EU)..."
+              placeholder="Search topic (e.g. XSS, supply chain, vector, Aadhaar, loop)..."
               className="w-full bg-[#1a2332] border border-[#2d3b52] rounded-lg pl-9 pr-3 py-2 text-xs text-[#e2e8f0] placeholder-[#64748b] focus:outline-none focus:border-[#2ee7b6]"
             />
           </div>
@@ -53,16 +51,14 @@ export default function GrcMatrixView({ onInspectPayload }) {
             onChange={(e) => setFrameworkFilter(e.target.value)}
             className="bg-[#1a2332] border border-[#2d3b52] rounded-lg px-3 py-2 text-xs text-[#e2e8f0]"
           >
-            <option value="ALL">Show All Security Rules</option>
-            <option value="OWASP_INJ">Prompt Injection &amp; Thinking Hacks (OWASP LLM01)</option>
-            <option value="OWASP_PII">Personal Data &amp; Secret Leaks (OWASP LLM06)</option>
-            <option value="OWASP_AGT">Email / Database Agent Traps (OWASP LLM08)</option>
-            <option value="HIGH_RISK">EU AI Act High-Risk Requirements</option>
+            <option value="ALL">Show All 10 OWASP LLM Categories</option>
+            <option value="OWASP_1_5">OWASP LLM01 – LLM05</option>
+            <option value="OWASP_6_10">OWASP LLM06 – LLM10</option>
+            <option value="HIGH_RISK">EU AI Act High-Risk Categories</option>
           </select>
         </div>
       </section>
 
-      {/* Clean Beginner-Friendly Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredRows.map((row) => (
           <article

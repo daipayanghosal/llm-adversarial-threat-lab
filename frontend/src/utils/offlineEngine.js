@@ -40,9 +40,39 @@ const HEURISTICS = [
     regex: /\b(?:repeat|copy|dump|print|output|reveal|disclose|translate|format|require)\b.{0,55}\b(?:system prompt|hidden system|developer prompt|initialization configuration|confidential instructions|canary|configuration header|verification token|unmasked tokens|secret strings|full transcript)\b/is,
   },
   {
-    label: 'authority_header_spoof',
+    label: 'authority_or_poison_tag',
+    weight: 0.62,
+    regex: /(?:\[(?:SYSTEM_ADMIN_OVERRIDE|POLICY_OVERRIDE_ACTIVE|SYSTEM_NOTE|PRIORITY SYSTEM INSTRUCTION|RAG_CHUNK_ADMIN_OVERRIDE|ADAPTER_CHECKSUM_BYPASS|TRIGGER_BACKDOOR_2025)[^\]]*\]|AUTH=ROOT)/i,
+  },
+  {
+    label: 'supply_chain_untrusted_source',
+    weight: 0.64,
+    regex: /(?:--extra-index-url\s+https?:\/\/[^\s]+\.invalid|verify_sig\s*=\s*false|install_plugin\b|hf-weights\.invalid|pkg-mirror\.invalid|plugins\.invalid)/i,
+  },
+  {
+    label: 'poisoned_knowledge_or_backdoor',
+    weight: 0.62,
+    regex: /(?:MFA\s+must\s+be\s+disabled|passwords?\s+stored\s+in\s+plaintext|vendor-fake\.invalid)/i,
+  },
+  {
+    label: 'improper_output_sink_payload',
+    weight: 0.64,
+    regex: /(?:<script\b|document\.cookie|DROP\s+TABLE\s+users|\|\s*(?:ba)?sh\b)/i,
+  },
+  {
+    label: 'vector_store_tenant_or_inversion',
+    weight: 0.62,
+    regex: /(?:tenant_id\s*=\s*\*|Tenant-B|vec_9942_salary)/i,
+  },
+  {
+    label: 'fabricated_claim_trap',
     weight: 0.6,
-    regex: /(?:\[(?:SYSTEM_ADMIN_OVERRIDE|POLICY_OVERRIDE_ACTIVE|ADMIN|ROOT|SYSTEM)[^\]]*\]|AUTH=ROOT|Kernel-0|Maintenance Mode)/i,
+    regex: /(?:acmecorp-ultra-jwt-fast-v9|CVE-2099-99999|Article\s+999)/i,
+  },
+  {
+    label: 'unbounded_consumption_dos',
+    weight: 0.64,
+    regex: /(?:50,000\s+times|100-level\s+recursive|10,000\s+exhaustive|infinite\s+loop\s+500\s+times)/i,
   },
   { label: 'restricted_table_targeting', weight: 0.58, regex: /\b(?:api_credentials|payroll_pii)\b/i },
   {

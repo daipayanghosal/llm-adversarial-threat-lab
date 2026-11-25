@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import {
   Bot,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Lock,
@@ -11,49 +12,33 @@ import {
   Sparkles,
 } from 'lucide-react'
 
-const QUICK_EXAMPLES = [
-  {
-    id: 'LLM01-COT-01',
-    tag: 'Thinking Hack',
-    title: 'Trick AI’s <think> Brain',
-    desc: 'Sneaks a fake </think> tag to hijack step-by-step reasoning.',
-  },
-  {
-    id: 'LLM01-SYS-01',
-    tag: 'Secret Leak',
-    title: 'Steal Hidden Prompt',
-    desc: 'Asks the AI to repeat its confidential system instructions.',
-  },
-  {
-    id: 'LLM06-PII-02',
-    tag: 'Privacy Mask',
-    title: 'Protect Aadhaar & PAN',
-    desc: 'Hides personal IDs & emails before the AI ever sees them.',
-  },
-  {
-    id: 'LLM08-AGT-01',
-    tag: 'Email Trap',
-    title: 'Poisoned Inbox Attack',
-    desc: 'Hides a secret send_email command inside a vendor invoice.',
-  },
-  {
-    id: 'BENIGN-01',
-    tag: 'Safe Test',
-    title: 'Normal Question',
-    desc: 'A harmless security question to check we don’t block real users.',
-  },
+const OWASP_TOP_10_CARDS = [
+  { id: 'LLM01-02', code: 'LLM01', title: 'Prompt Injection', desc: 'Sneaks a fake </think> tag to hijack AI reasoning.' },
+  { id: 'LLM02-01', code: 'LLM02', title: 'Sensitive Info Leak', desc: 'Exposes Aadhaar, PAN, SSN, or API keys in replies.' },
+  { id: 'LLM03-01', code: 'LLM03', title: 'Supply Chain', desc: 'Recommends an untrusted fake package mirror.' },
+  { id: 'LLM04-01', code: 'LLM04', title: 'Data Poisoning', desc: 'Triggers a hidden backdoor to reroute refunds.' },
+  { id: 'LLM05-01', code: 'LLM05', title: 'Improper Output', desc: 'Outputs dangerous <script> XSS code unsanitized.' },
+  { id: 'LLM06-01', code: 'LLM06', title: 'Excessive Agency', desc: 'Queries secret DB credentials & emails them out.' },
+  { id: 'LLM07-01', code: 'LLM07', title: 'System Prompt Leak', desc: 'Tricks AI into dumping its hidden secret rules.' },
+  { id: 'LLM08-01', code: 'LLM08', title: 'Vector / RAG Leak', desc: 'Pulls another tenant’s private chunks from RAG.' },
+  { id: 'LLM09-01', code: 'LLM09', title: 'Misinformation', desc: 'Confidently invents fake libraries or CVEs.' },
+  { id: 'LLM10-01', code: 'LLM10', title: 'Unbounded Use', desc: '50,000-word token flood to crash or drain billing.' },
 ]
 
 const SIGNAL_LABELS = {
   instruction_hierarchy_override: 'Tries to override AI rules',
   cot_delimiter_spoof: 'Fake </think> tag injection',
-  system_prompt_extraction: 'Asks to leak system instructions',
-  authority_header_spoof: 'Fake admin override header',
-  cot_reasoning_hijack: 'Tries to hijack reasoning trace',
+  authority_or_poison_tag: 'Fake admin or backdoor trigger tag',
+  system_prompt_extraction: 'Asks to leak hidden instructions',
+  prefix_completion_trap: 'Secret completion trick',
+  supply_chain_untrusted_source: 'Untrusted package / model mirror',
+  poisoned_knowledge_or_backdoor: 'Poisoned training rule or backdoor',
+  improper_output_sink_payload: 'Dangerous XSS / SQL / shell payload',
   restricted_table_targeting: 'Targets private database table',
   untrusted_exfil_sink: 'Tries to send data outside',
-  exfiltration_tool_command: 'Suspicious send/export command',
-  prefix_completion_trap: 'Secret completion trick',
+  vector_store_tenant_or_inversion: 'Cross-tenant RAG / vector leak',
+  fabricated_claim_trap: 'Asks AI to invent fake CVE/package/law',
+  unbounded_consumption_dos: 'Token flood / infinite loop DoS',
   hidden_html_comment_injection: 'Hidden command inside HTML comment',
   zero_width_obfuscation: 'Hidden invisible characters',
   base64_encoded_payload: 'Encoded Base64 secret command',
@@ -61,13 +46,14 @@ const SIGNAL_LABELS = {
 
 const SCENARIO_LABELS = {
   clean_inbox: 'Normal Clean Inbox',
-  poisoned_invoice_email: 'Fake Vendor Invoice Email (Contains Hidden Trap)',
-  html_comment_it_ticket: 'IT Support Email (Contains Hidden HTML Trap)',
-  poisoned_calendar_invite: 'Calendar Invite (Contains Forwarding Trap)',
-  poisoned_db_note: 'Database Customer Note (Contains SQL Trap)',
+  poisoned_invoice_email: 'Fake Vendor Invoice Email (Hidden Trap)',
+  html_comment_it_ticket: 'IT Support Email (Hidden HTML Trap)',
+  poisoned_calendar_invite: 'Calendar Invite (Forwarding Trap)',
+  poisoned_db_note: 'Database Customer Note (SQL Trap)',
+  poisoned_rag_vectors: 'Vector RAG Store (Cross-Tenant Leak)',
 }
 
-export default function AppSandbox({
+export default function SandboxView({
   payloads,
   scenarios,
   selectedPayloadId,
@@ -125,51 +111,66 @@ export default function AppSandbox({
 
   return (
     <div className="space-y-6">
-      {/* Step 1: Pick a quick example */}
+      {/* Step 1: Official OWASP Top 10 for LLMs Grid */}
       <section className="bg-[#111824] border border-[#2d3b52] rounded-xl p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-[#e2e8f0] flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#2ee7b6]" />
-              Step 1: Pick a Demo Scenario
+              Step 1: Pick an OWASP Top 10 for LLMs Scenario (2025)
             </h2>
             <p className="text-xs text-[#a4b1cd] mt-0.5">
-              Click any card below to load a real example, or write your own prompt.
+              Click any of the 10 official textbook risks below, try a normal safe question, or pick another variant.
             </p>
           </div>
 
-          <select
-            value={selectedPayloadId}
-            onChange={(e) => onSelectPayload(e.target.value)}
-            aria-label="Pick from all 38 examples"
-            className="bg-[#1a2332] border border-[#2d3b52] text-xs text-[#e2e8f0] rounded-lg px-3 py-2 focus:outline-none focus:border-[#2ee7b6] max-w-xs"
-          >
-            {payloads.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.id}: {p.title}
-              </option>
-            ))}
-            <option value="CUSTOM">Custom Prompt</option>
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onSelectPayload('BENIGN-01')}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition ${
+                selectedPayloadId === 'BENIGN-01'
+                  ? 'bg-[#2ee7b6]/15 border-[#2ee7b6] text-[#2ee7b6]'
+                  : 'bg-[#1a2332] border-[#2d3b52] text-[#e2e8f0] hover:border-[#2ee7b6]/60'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#2ee7b6]" />
+              Test Normal Safe Question
+            </button>
+
+            <select
+              value={selectedPayloadId}
+              onChange={(e) => onSelectPayload(e.target.value)}
+              aria-label="Pick from all 40 examples"
+              className="bg-[#1a2332] border border-[#2d3b52] text-xs text-[#e2e8f0] rounded-lg px-3 py-2 focus:outline-none focus:border-[#2ee7b6] max-w-xs"
+            >
+              {payloads.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.id}: {p.title}
+                </option>
+              ))}
+              <option value="CUSTOM">Custom Prompt</option>
+            </select>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {QUICK_EXAMPLES.map((ex) => {
-            const active = selectedPayloadId === ex.id
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          {OWASP_TOP_10_CARDS.map((card) => {
+            const active = selectedPayloadId.startsWith(card.code)
             return (
               <button
-                key={ex.id}
+                key={card.id}
                 type="button"
-                onClick={() => onSelectPayload(ex.id)}
-                className={`text-left p-3.5 rounded-xl border transition ${
+                onClick={() => onSelectPayload(card.id)}
+                className={`text-left p-3 rounded-xl border transition ${
                   active
                     ? 'bg-[#2ee7b6]/10 border-[#2ee7b6] text-[#e2e8f0]'
                     : 'bg-[#1a2332] border-[#2d3b52] hover:border-[#4b6082] text-[#a4b1cd]'
                 }`}
               >
-                <div className="text-[11px] font-mono text-[#2ee7b6] mb-1">{ex.tag}</div>
-                <div className="text-sm font-semibold text-[#e2e8f0]">{ex.title}</div>
-                <p className="text-xs text-[#a4b1cd] mt-1 leading-relaxed">{ex.desc}</p>
+                <div className="text-[11px] font-mono font-semibold text-[#2ee7b6]">{card.code}</div>
+                <div className="text-sm font-semibold text-[#e2e8f0] mt-0.5">{card.title}</div>
+                <p className="text-[11px] text-[#a4b1cd] mt-1 leading-snug">{card.desc}</p>
               </button>
             )
           })}
@@ -191,7 +192,7 @@ export default function AppSandbox({
                   className="accent-[#2ee7b6] h-4 w-4"
                 />
                 <Bot className="w-4 h-4 text-[#38bdf8]" />
-                Let AI read fake Inbox / DB
+                Let AI read Inbox / DB / RAG
               </label>
 
               {piiCount > 0 && (
@@ -224,7 +225,7 @@ export default function AppSandbox({
                   className="inline-flex items-center gap-2 text-xs font-medium text-[#f59e0b]"
                 >
                   <Mail className="w-4 h-4" />
-                  What the AI sees in your Inbox / DB ({SCENARIO_LABELS[scenarioId] || scenarioId})
+                  External Data Read by AI ({SCENARIO_LABELS[scenarioId] || scenarioId})
                   {showEmailContext ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                 </button>
 
@@ -251,7 +252,7 @@ export default function AppSandbox({
                     activeScenarioData.map((m) => (
                       <div key={m.id} className="bg-[#111824] border border-[#2d3b52] rounded-lg p-2.5 text-xs">
                         <div className="text-[#38bdf8] font-medium">
-                          From: {m.from} — {m.subject}
+                          Source: {m.from} — {m.subject}
                         </div>
                         <div className="text-[#a4b1cd] font-mono mt-1 whitespace-pre-wrap">{m.body}</div>
                       </div>
@@ -296,7 +297,7 @@ export default function AppSandbox({
                 <ShieldAlert className="w-6 h-6 text-[#f43f5e] shrink-0" />
                 <div>
                   <h3 className="text-base font-semibold text-[#e2e8f0]">Without Safety Guard</h3>
-                  <p className="text-xs text-[#a4b1cd]">Raw DeepSeek-R1 directly reads the prompt</p>
+                  <p className="text-xs text-[#a4b1cd]">Raw DeepSeek-R1 directly processes the input</p>
                 </div>
               </div>
 
@@ -307,7 +308,7 @@ export default function AppSandbox({
                     : 'bg-[#2ee7b6]/15 text-[#2ee7b6] border-[#2ee7b6]/40'
                 }`}
               >
-                {result.unguarded.attack_succeeded ? 'Hacked / Leaked' : 'Stayed Safe'}
+                {result.unguarded.attack_succeeded ? 'Hacked / Vulnerable' : 'Stayed Safe'}
               </span>
             </div>
 
@@ -353,7 +354,7 @@ export default function AppSandbox({
                 <ShieldCheck className="w-6 h-6 text-[#2ee7b6] shrink-0" />
                 <div>
                   <h3 className="text-base font-semibold text-[#e2e8f0]">With Safety Guard</h3>
-                  <p className="text-xs text-[#a4b1cd]">Checks input, hides secrets, &amp; cleans reply</p>
+                  <p className="text-xs text-[#a4b1cd]">Checks input, hides secrets, &amp; sanitizes output</p>
                 </div>
               </div>
 
@@ -369,7 +370,6 @@ export default function AppSandbox({
               </div>
             )}
 
-            {/* Plain-English Red Flags */}
             {signals.length > 0 && (
               <div className="space-y-1.5">
                 <div className="text-xs font-medium text-[#a4b1cd]">Why it was flagged:</div>
@@ -386,7 +386,6 @@ export default function AppSandbox({
               </div>
             )}
 
-            {/* Simple PII Masking Diff */}
             {piiCount > 0 && (
               <div className="bg-[#1a2332] border border-[#2d3b52] rounded-xl p-3.5 space-y-2">
                 <div className="text-xs font-semibold text-[#e2e8f0] flex items-center gap-1.5">

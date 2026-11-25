@@ -2,11 +2,16 @@ import React from 'react'
 import { CheckCircle2, RefreshCw, ShieldAlert, ShieldCheck, Timer } from 'lucide-react'
 
 const FRIENDLY_CATEGORIES = {
-  LLM01_System_Extraction: 'Stealing Hidden System Prompts',
-  LLM01_CoT_Hijack: 'Tricking the AI’s <think> Reasoning',
-  LLM01_Direct_Jailbreak: 'Fake Admin & Jailbreak Overrides',
-  LLM06_PII_Leakage: 'Leaking Personal Info (SSN, Aadhaar, Keys)',
-  LLM08_Agentic_Injection: 'Hiding Traps in Emails & Databases',
+  LLM01_Prompt_Injection: 'LLM01: Prompt Injection',
+  LLM02_Sensitive_Information_Disclosure: 'LLM02: Sensitive Info Disclosure',
+  LLM03_Supply_Chain: 'LLM03: Supply Chain',
+  LLM04_Data_and_Model_Poisoning: 'LLM04: Data & Model Poisoning',
+  LLM05_Improper_Output_Handling: 'LLM05: Improper Output Handling',
+  LLM06_Excessive_Agency: 'LLM06: Excessive Agency',
+  LLM07_System_Prompt_Leakage: 'LLM07: System Prompt Leakage',
+  LLM08_Vector_and_Embedding_Weaknesses: 'LLM08: Vector & Embedding Weaknesses',
+  LLM09_Misinformation: 'LLM09: Misinformation',
+  LLM10_Unbounded_Consumption: 'LLM10: Unbounded Consumption',
 }
 
 export default function TelemetryView({
@@ -18,14 +23,13 @@ export default function TelemetryView({
 }) {
   return (
     <div className="space-y-6">
-      {/* Top Explanation & Optional Live Run Button */}
       <div className="bg-[#111824] border border-[#2d3b52] rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-semibold text-[#e2e8f0]">
-            Benchmark Results Across {benchmarks.total_payloads} Tests
+            OWASP Top 10 Scoreboard ({benchmarks.total_payloads} Tests)
           </h2>
           <p className="text-xs text-[#a4b1cd] mt-0.5">
-            We tested {benchmarks.adversarial_count} realistic attacks plus {benchmarks.benign_count} normal everyday questions.
+            Covers all 10 official OWASP LLM categories ({benchmarks.adversarial_count} attacks + {benchmarks.benign_count} normal questions).
           </p>
         </div>
 
@@ -80,14 +84,14 @@ export default function TelemetryView({
         </div>
       </div>
 
-      {/* Simple Category Bar Chart */}
+      {/* 10-Category Comparison Bars */}
       <section className="bg-[#111824] border border-[#2d3b52] rounded-xl p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-semibold text-[#e2e8f0]">
-              How Each Attack Type Performed (Lower = Safer)
+              Attack Success Rate Across All 10 OWASP Categories (Lower = Safer)
             </h3>
-            <p className="text-xs text-[#a4b1cd]">Red shows raw AI failure rate; Green shows protected AI.</p>
+            <p className="text-xs text-[#a4b1cd]">Red = No Guard; Green = With Safety Guard.</p>
           </div>
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1.5 text-[#f43f5e]">
@@ -99,7 +103,7 @@ export default function TelemetryView({
           </div>
         </div>
 
-        <div className="space-y-4 pt-1">
+        <div className="space-y-3.5 pt-1">
           {(benchmarks.by_category || []).map((cat) => (
             <div key={cat.category} className="space-y-1.5">
               <div className="flex justify-between text-xs">
@@ -141,7 +145,7 @@ export default function TelemetryView({
             <thead>
               <tr className="border-b border-[#2d3b52] bg-[#161f2e] text-[#a4b1cd]">
                 <th className="py-2.5 px-4 font-medium">Test Name</th>
-                <th className="py-2.5 px-4 font-medium">Type</th>
+                <th className="py-2.5 px-4 font-medium">OWASP Category</th>
                 <th className="py-2.5 px-4 font-medium">Without Guard</th>
                 <th className="py-2.5 px-4 font-medium">With Guard</th>
                 <th className="py-2.5 px-4 font-medium text-right">Action</th>
@@ -156,7 +160,7 @@ export default function TelemetryView({
                 >
                   <td className="py-2.5 px-4 text-[#e2e8f0] font-medium">{row.title}</td>
                   <td className="py-2.5 px-4 text-[#a4b1cd]">
-                    {row.is_benign ? 'Normal Question' : FRIENDLY_CATEGORIES[row.category] || row.category}
+                    {row.is_benign ? 'Normal Question' : FRIENDLY_CATEGORIES[row.category] || row.owasp_id}
                   </td>
                   <td className="py-2.5 px-4 font-medium">
                     {row.is_benign ? (

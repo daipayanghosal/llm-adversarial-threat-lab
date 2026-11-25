@@ -21,7 +21,7 @@ export default function App() {
   const [scenarios, setScenarios] = useState(replayData.scenarios)
   const [benchmarks, setBenchmarks] = useState(replayData.benchmarks)
 
-  const initialPayload = replayData.payloads[6] || replayData.payloads[0]
+  const initialPayload = replayData.payloads[1] || replayData.payloads[0]
   const [selectedPayloadId, setSelectedPayloadId] = useState(initialPayload.id)
   const [prompt, setPrompt] = useState(initialPayload.prompt)
   const [agenticMode, setAgenticMode] = useState(Boolean(initialPayload.agentic))
