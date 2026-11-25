@@ -1,0 +1,14 @@
+# Core backend & API bridge (lightweight for <2 min Colab setup)
+fastapi>=0.110.0
+uvicorn>=0.29.0
+requests>=2.31.0
+pydantic>=2.6.0
+
+# Pre-inference semantic guardrail & evaluation telemetry
+scikit-learn>=1.4.0
+numpy>=1.26.0
+matplotlib>=3.8.0
+rich>=13.7.0
+
+# Optional Colab tunnel helpers (installed separately or via notebook)
+# pyngrok>=7.1.0
